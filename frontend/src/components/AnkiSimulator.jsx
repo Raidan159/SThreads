@@ -102,11 +102,11 @@ const AnkiSimulator = () => {
       <div className="simulator-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Activity size={24} color="#2563EB" />
-          <h2 style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '22px' }}>
+          <h2 style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 'var(--font-size-xxl)' }}>
             Multi-Scheduler Interval Simulator
           </h2>
         </div>
-        <p style={{ color: '#6B6664', fontSize: '13px', marginTop: '4px' }}>
+        <p style={{ color: '#6B6664', fontSize: 'var(--font-size-sm)', marginTop: '4px' }}>
           Compare the mathematical interval growth of FSRS, SM-2, and Leitner scheduling algorithms side-by-side.
         </p>
       </div>
@@ -115,7 +115,7 @@ const AnkiSimulator = () => {
         {/* Controls Card */}
         <div className="simulator-card glass-panel">
           <h3 className="card-subtitle">1. Build Review Sequence</h3>
-          <p style={{ fontSize: '12px', color: '#6B6664', marginBottom: '16px' }}>
+          <p style={{ fontSize: 'var(--font-size-sm-sub)', color: '#6B6664', marginBottom: '16px' }}>
             Click rating buttons to build a sequence of reviews and see how intervals adapt.
           </p>
 
@@ -127,7 +127,7 @@ const AnkiSimulator = () => {
           </div>
 
           <div className="reviews-timeline-container">
-            <h4 style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664', margin: '15px 0 8px 0' }}>
+            <h4 style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664', margin: '15px 0 8px 0' }}>
               Current Sequence ({reviews.length} / 12)
             </h4>
 
@@ -149,7 +149,7 @@ const AnkiSimulator = () => {
           <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
             <button 
               className="btn-secondary" 
-              style={{ flex: 1, padding: '8px', fontSize: '12px' }}
+              style={{ flex: 1, padding: '8px', fontSize: 'var(--font-size-sm-sub)' }}
               onClick={handleRemoveLast}
               disabled={reviews.length === 0}
             >
@@ -157,7 +157,7 @@ const AnkiSimulator = () => {
             </button>
             <button 
               className="btn-secondary" 
-              style={{ flex: 1, padding: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              style={{ flex: 1, padding: '8px', fontSize: 'var(--font-size-sm-sub)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               onClick={handleReset}
               disabled={reviews.length === 0}
             >
@@ -171,7 +171,7 @@ const AnkiSimulator = () => {
         <div className="simulator-card glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
           <h3 className="card-subtitle">2. Interval Growth Curve</h3>
           
-          <div className="chart-legend" style={{ display: 'flex', gap: '16px', fontSize: '11px', fontWeight: 600, margin: '8px 0 16px 0' }}>
+          <div className="chart-legend" style={{ display: 'flex', gap: '16px', fontSize: 'var(--font-size-xs)', fontWeight: 600, margin: '8px 0 16px 0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '12px', height: '3px', backgroundColor: '#6366F1', borderRadius: '2px' }} />
               <span>FSRS (v4)</span>
@@ -188,7 +188,7 @@ const AnkiSimulator = () => {
 
           <div className="chart-svg-wrapper" style={{ flex: 1, position: 'relative', minHeight: '260px' }}>
             {simulationData.length === 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#6B6664', fontSize: '13px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#6B6664', fontSize: 'var(--font-size-sm)' }}>
                 Build a review sequence to draw the graph
               </div>
             ) : (
@@ -322,7 +322,7 @@ const AnkiSimulator = () => {
         <h3 className="card-subtitle" style={{ marginBottom: '16px' }}>3. Detailed Parameters Comparison</h3>
         
         {simulationData.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px', color: '#6B6664', fontSize: '13px' }}>
+          <div style={{ textAlign: 'center', padding: '30px', color: '#6B6664', fontSize: 'var(--font-size-sm)' }}>
             No comparison data available. Build a sequence first.
           </div>
         ) : (
@@ -337,13 +337,13 @@ const AnkiSimulator = () => {
                   <th colSpan="2" style={{ backgroundColor: 'rgba(217, 119, 6, 0.05)', color: '#B45309', borderBottom: '1px solid rgba(217, 119, 6, 0.1)' }}>Leitner Box</th>
                 </tr>
                 <tr>
-                  <th style={{ backgroundColor: 'rgba(99, 102, 241, 0.02)', fontSize: '10px' }}>Stability</th>
-                  <th style={{ backgroundColor: 'rgba(99, 102, 241, 0.02)', fontSize: '10px', borderRight: '1px solid rgba(44, 42, 41, 0.08)' }}>Interval</th>
-                  <th style={{ backgroundColor: 'rgba(13, 148, 136, 0.02)', fontSize: '10px' }}>Ease F.</th>
-                  <th style={{ backgroundColor: 'rgba(13, 148, 136, 0.02)', fontSize: '10px' }}>Reps</th>
-                  <th style={{ backgroundColor: 'rgba(13, 148, 136, 0.02)', fontSize: '10px', borderRight: '1px solid rgba(44, 42, 41, 0.08)' }}>Interval</th>
-                  <th style={{ backgroundColor: 'rgba(217, 119, 6, 0.02)', fontSize: '10px' }}>Box</th>
-                  <th style={{ backgroundColor: 'rgba(217, 119, 6, 0.02)', fontSize: '10px' }}>Interval</th>
+                  <th style={{ backgroundColor: 'rgba(99, 102, 241, 0.02)', fontSize: 'var(--font-size-xxs)' }}>Stability</th>
+                  <th style={{ backgroundColor: 'rgba(99, 102, 241, 0.02)', fontSize: 'var(--font-size-xxs)', borderRight: '1px solid rgba(44, 42, 41, 0.08)' }}>Interval</th>
+                  <th style={{ backgroundColor: 'rgba(13, 148, 136, 0.02)', fontSize: 'var(--font-size-xxs)' }}>Ease F.</th>
+                  <th style={{ backgroundColor: 'rgba(13, 148, 136, 0.02)', fontSize: 'var(--font-size-xxs)' }}>Reps</th>
+                  <th style={{ backgroundColor: 'rgba(13, 148, 136, 0.02)', fontSize: 'var(--font-size-xxs)', borderRight: '1px solid rgba(44, 42, 41, 0.08)' }}>Interval</th>
+                  <th style={{ backgroundColor: 'rgba(217, 119, 6, 0.02)', fontSize: 'var(--font-size-xxs)' }}>Box</th>
+                  <th style={{ backgroundColor: 'rgba(217, 119, 6, 0.02)', fontSize: 'var(--font-size-xxs)' }}>Interval</th>
                 </tr>
               </thead>
               <tbody>

@@ -16,14 +16,14 @@ const CanvasTimeline = ({
   const containerRef = useRef(null);
   const pixiAppRef = useRef(null);
   console.log("CanvasTimeline render nodes length:", nodes ? nodes.length : "null");
-  
+
   // Viewport transformation states
   const [viewport, setViewport] = useState({
     zoom: 1.0,
     offsetX: 150,
     offsetY: 50
   });
-  
+
   // Dragging state
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -66,7 +66,7 @@ const CanvasTimeline = ({
 
     // Create Pixi application (compatible with v7 and v8)
     const app = new PIXI.Application();
-    
+
     // Initialize asynchronously to handle PIXI v8 style, fallback to sync for v7
     const initApp = async () => {
       try {
@@ -83,7 +83,7 @@ const CanvasTimeline = ({
           // PixiJS v7 sync constructor
           app.renderer.resize(width, height);
         }
-        
+
         if (isDestroyed) {
           app.destroy(true, { children: true });
           return;
@@ -95,14 +95,14 @@ const CanvasTimeline = ({
           containerRef.current.appendChild(app.canvas || app.view);
         }
         pixiAppRef.current = app;
-        
+
         // Draw initial loop
         draw(app);
       } catch (err) {
         console.error("PixiJS initialization failed", err);
       }
     };
-    
+
     initApp();
 
     // Handle Resize
@@ -110,13 +110,13 @@ const CanvasTimeline = ({
       if (!pixiAppRef.current) return;
       const w = containerRef.current?.clientWidth || width;
       const h = containerRef.current?.clientHeight || height;
-      
+
       if (pixiAppRef.current.renderer) {
         pixiAppRef.current.renderer.resize(w, h);
       }
       triggerRedraw();
     });
-    
+
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
@@ -176,7 +176,7 @@ const CanvasTimeline = ({
   // Helper: calculate local FSRS retrievability
   const calculateMemoryHealth = (nodeId) => {
     const { reviews, tCurrent } = stateRef.current;
-    
+
     // Find due cards for this node
     const nodeReviews = reviews.filter(r => r.node_id === nodeId);
     if (nodeReviews.length === 0) return null; // Gray / default
@@ -188,11 +188,11 @@ const CanvasTimeline = ({
     // Sort by review_date desc
     validReviews.sort((a, b) => new Date(b.review_date).getTime() - new Date(a.review_date).getTime());
     const latest = validReviews[0];
-    
+
     // Elapsed time from review to tCurrent
     const elapsedMs = new Date(tCurrent).getTime() - new Date(latest.review_date).getTime();
     const elapsedDays = Math.max(0, elapsedMs / (24 * 60 * 60 * 1000));
-    
+
     // R = (1 + t / (9 * S))^-0.5
     const r = Math.pow(1 + elapsedDays / (9.0 * latest.stability), -0.5);
     return r;
@@ -201,7 +201,7 @@ const CanvasTimeline = ({
   // Drawing loop
   const draw = (app) => {
     if (!app.stage) return;
-    
+
     // Clear Stage children
     while (app.stage.children.length > 0) {
       app.stage.removeChildAt(0);
@@ -268,7 +268,7 @@ const CanvasTimeline = ({
 
     dayTicks.forEach(dayOffset => {
       const tickX = dayOffset * PIXELS_PER_DAY * currentViewport.zoom + currentViewport.offsetX;
-      
+
       // Nodes created on this day
       const dayNodes = allNodes.filter(n => {
         const nodeDayOffset = Math.round((new Date(n.created_at).getTime() - BASE_DATE_TIME) / DAY_MS);
@@ -291,12 +291,12 @@ const CanvasTimeline = ({
 
       const listCoords = [];
       const N = daySpaces.length;
-      
+
       // Calculate dynamic tab widths and X offsets from front (0) to back (N-1)
       const wTabs = [];
       const xOffsets = [];
       let currentXOffset = 0;
-      
+
       for (let j = 0; j < N; j++) {
         const space = daySpaces[j];
         // Estimate text width: ~8.5px per character under Outfit font
@@ -306,18 +306,18 @@ const CanvasTimeline = ({
         xOffsets.push(currentXOffset);
         currentXOffset += wTab - 12 * currentViewport.zoom; // Shift for next tab with small overlap
       }
-      
+
       // Now construct the list in back-to-front order (index N-1 down to 0) so Topic C renders behind Topic A
       for (let j = N - 1; j >= 0; j--) {
         const space = daySpaces[j];
         // Shift folders horizontally and vertically like a real filing cabinet drawer
         const folderX = tickX + xOffsets[j];
         const folderY = axisY - 60 * currentViewport.zoom - j * 16 * currentViewport.zoom;
-        listCoords.push({ 
-          space, 
-          x: folderX, 
-          y: folderY, 
-          wTab: wTabs[j] 
+        listCoords.push({
+          space,
+          x: folderX,
+          y: folderY,
+          wTab: wTabs[j]
         });
       }
       spaceCoords[dayOffset] = listCoords;
@@ -343,7 +343,7 @@ const CanvasTimeline = ({
 
       let isHighlighted = false;
       let opacity = 0.35;
-      
+
       if (highlightedNodeIds && highlightedNodeIds.length > 0) {
         if (highlightedNodeIds.includes(e.source_id) && highlightedNodeIds.includes(e.target_id)) {
           isHighlighted = true;
@@ -409,7 +409,7 @@ const CanvasTimeline = ({
       const dayNum = dateObj.getDate();
       const monthStr = dateObj.toLocaleString("en-US", { month: "short" }).toUpperCase();
       const dateTextStr = `${dayNum} ${monthStr}`;
-      
+
       const dateStyle = new PIXI.TextStyle({
         fontFamily: 'Outfit',
         fontSize: Math.max(10, Math.min(14, 12 * currentViewport.zoom)),
@@ -438,7 +438,7 @@ const CanvasTimeline = ({
         const xR = tabWidth / 2;
         const yB = tabHeight / 2;
         const yT = -tabHeight / 2;
-        
+
         const wSlope = 18 * currentViewport.zoom;
         const yTab = yT - 16 * currentViewport.zoom; // Taller tab to fit the text label
 
@@ -449,14 +449,14 @@ const CanvasTimeline = ({
         folderGraphics.lineTo(xR, yT + r);
         folderGraphics.quadraticCurveTo(xR, yT, xR - r, yT);
         folderGraphics.lineTo(xL + wTab + wSlope, yT);
-        
+
         // Slope curve to tab top
         folderGraphics.bezierCurveTo(
           xL + wTab + wSlope * 0.6, yT,
           xL + wTab + wSlope * 0.4, yTab,
           xL + wTab, yTab
         );
-        
+
         folderGraphics.lineTo(xL + r + 4 * currentViewport.zoom, yTab);
         folderGraphics.quadraticCurveTo(xL, yTab, xL, yTab + r);
         folderGraphics.lineTo(xL, yB - r);
@@ -508,7 +508,7 @@ const CanvasTimeline = ({
         const memoryHealth = calculateMemoryHealth(node.id);
         const space = allSpaces.find(s => s.id === node.space_id);
         let badgeColorHex = space ? parseHSL(space.color) : 0x3B82F6; // Default to space color
-        
+
         if (memoryHealth !== null) {
           // Color based on memory health
           if (memoryHealth >= 0.9) badgeColorHex = 0x2563EB; // Excellent (Vibrant Blue)
@@ -576,11 +576,11 @@ const CanvasTimeline = ({
     // Format: "h, s%, l%"
     const matches = hslStr.match(/\d+/g);
     if (!matches || matches.length < 3) return 0x3B82F6;
-    
+
     const h = parseInt(matches[0]);
     const s = parseInt(matches[1]);
     const l = parseInt(matches[2]);
-    
+
     return hslToHex(h, s, l);
   };
 
@@ -611,7 +611,7 @@ const CanvasTimeline = ({
 
   const handleMouseMove = (e) => {
     if (!isDragging.current) return;
-    
+
     // Clear hover states immediately when panning starts
     onHoverSpace(null);
     onHoverNode(null);
@@ -654,7 +654,7 @@ const CanvasTimeline = ({
     // Zoom speed
     const zoomFactor = 1.1;
     let newZoom = viewport.zoom;
-    
+
     if (e.deltaY < 0) {
       newZoom = Math.min(2.0, viewport.zoom * zoomFactor);
     } else {

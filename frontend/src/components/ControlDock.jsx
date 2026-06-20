@@ -50,10 +50,10 @@ const ControlDock = ({
 
         {/* Date Display */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: '10px', textTransform: 'uppercase', color: '#6B6664', fontWeight: 700 }}>
+          <span style={{ fontSize: 'var(--font-size-xxs)', textTransform: 'uppercase', color: '#6B6664', fontWeight: 700 }}>
             Global Time Machine Target
           </span>
-          <span style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: '14px' }}>
+          <span style={{ fontFamily: 'Outfit', fontWeight: 600, fontSize: 'var(--font-size-sm)' }}>
             {formatDateStr(new Date(tCurrent))}
           </span>
         </div>
@@ -104,7 +104,7 @@ const ControlDock = ({
                 right: '-4px',
                 backgroundColor: '#EA580C',
                 color: '#fff',
-                fontSize: '9px',
+                fontSize: 'var(--font-size-xxs)',
                 fontWeight: 700,
                 width: '16px',
                 height: '16px',

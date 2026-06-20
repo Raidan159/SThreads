@@ -8,31 +8,55 @@ import AnkiSimulator from './components/AnkiSimulator';
 
 const API_BASE = "http://localhost:8000/api";
 
+const renderHighlightedText = (text) => {
+  if (!text) return null;
+  const parts = text.split(/==(.*?)==/g);
+  return parts.map((part, index) => {
+    if (index % 2 === 1) {
+      return (
+        <mark
+          key={index}
+          style={{
+            backgroundColor: 'var(--accent-lime)',
+            color: 'var(--text-primary)',
+            padding: '2px 4px',
+            borderRadius: '4px',
+            fontWeight: 600
+          }}
+        >
+          {part}
+        </mark>
+      );
+    }
+    return part;
+  });
+};
+
 function App() {
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [spaces, setSpaces] = useState([]);
   const [reviews, setReviews] = useState([]);
-  
+
   // Reviews state
   const [dueCards, setDueCards] = useState([]);
   const [subgraph, setSubgraph] = useState(null);
   const [isReviewing, setIsReviewing] = useState(false);
-  
+
   // View states
   const [viewMode, setViewMode] = useState('timeline'); // 'timeline' or 'graph'
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [tCurrent, setTCurrent] = useState(new Date("2026-10-26T00:00:00"));
   const [isPlaying, setIsPlaying] = useState(false);
-  
+
   // Hover states for timeline interactions
   const [hoveredSpace, setHoveredSpace] = useState(null); // { space, x, y }
   const [hoveredNode, setHoveredNode] = useState(null);   // { node, x, y }
-  
+
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  
+
   // Create state
   const [showCreateNode, setShowCreateNode] = useState(false);
   const [newNodeTitle, setNewNodeTitle] = useState("");
@@ -62,7 +86,7 @@ function App() {
       // Fetch Spaces
       const spacesRes = await fetch(`${API_BASE}/spaces`);
       let spacesData = await spacesRes.json();
-      
+
       // If database is empty, trigger seed endpoint to bootstrap data
       if (spacesData.length === 0) {
         await fetch(`${API_BASE}/seed`, { method: "POST" });
@@ -98,7 +122,7 @@ function App() {
       // Let's call our backend endpoint `/api/memory-health` to get current retrievability
       const mhRes = await fetch(`${API_BASE}/memory-health?t_current=${tCurrent.toISOString()}`);
       const reviewsData = await mhRes.json();
-      
+
       // We will simulate reviews list:
       // Since we need to know the review history for client-side calculation,
       // let's create a custom mapping from our database
@@ -109,7 +133,7 @@ function App() {
       // Let's get actual database card details
       const fcRes = await fetch(`${API_BASE}/flashcards`);
       const cards = await fcRes.json();
-      
+
       const simulatedReviews = [];
       // Seed dummy records for local computing
       // Card 1 (Coruscant) reviewed on 21 OCT, stability 2.4
@@ -335,13 +359,29 @@ function App() {
     }
   };
 
+  const calculateNodeMemoryHealth = (nodeId) => {
+    const nodeReviews = reviews.filter(r => r.node_id === nodeId);
+    if (nodeReviews.length === 0) return null;
+
+    const validReviews = nodeReviews.filter(r => new Date(r.review_date) <= tCurrent);
+    if (validReviews.length === 0) return 1.0;
+
+    validReviews.sort((a, b) => new Date(b.review_date).getTime() - new Date(a.review_date).getTime());
+    const latest = validReviews[0];
+
+    const elapsedMs = tCurrent.getTime() - new Date(latest.review_date).getTime();
+    const elapsedDays = Math.max(0, elapsedMs / (24 * 60 * 60 * 1000));
+
+    return Math.pow(1 + elapsedDays / (9.0 * latest.stability), -0.5);
+  };
+
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
   const selectedNodeSpace = selectedNode ? spaces.find(s => s.id === selectedNode.space_id) : null;
   const activeNodes = nodes.filter(n => new Date(n.created_at) <= tCurrent);
 
   return (
     <div className="app-container">
-      
+
       {/* Sidebar Panel */}
       <div className="sidebar">
         <h1 className="sidebar-title">
@@ -367,13 +407,13 @@ function App() {
             <h2 className="section-title">Search Results</h2>
             <div className="search-results">
               {searchResults.length === 0 ? (
-                <div style={{ fontSize: '12px', color: '#6B6664', textAlign: 'center', padding: '10px' }}>
+                <div style={{ fontSize: 'var(--font-size-sm-sub)', color: '#6B6664', textAlign: 'center', padding: '10px' }}>
                   No semantic matches found
                 </div>
               ) : (
                 searchResults.map(res => (
-                  <div 
-                    key={res.id} 
+                  <div
+                    key={res.id}
                     className="search-result-item"
                     onClick={() => {
                       setSelectedNodeId(res.id);
@@ -398,9 +438,9 @@ function App() {
         {/* Action Panel Links */}
         <div className="sidebar-section">
           <h2 className="section-title">Knowledge Grid Actions</h2>
-          
-          <button 
-            className="btn-secondary" 
+
+          <button
+            className="btn-secondary"
             style={{ width: '100%', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             onClick={() => setShowCreateNode(true)}
           >
@@ -408,8 +448,8 @@ function App() {
             <span>Create Knowledge Node</span>
           </button>
 
-          <button 
-            className="btn-secondary" 
+          <button
+            className="btn-secondary"
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             onClick={() => setShowCreateEdge(true)}
           >
@@ -423,14 +463,14 @@ function App() {
           <h2 className="section-title">Spaces ({spaces.length})</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {spaces.map(s => (
-              <div 
-                key={s.id} 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px', 
-                  fontSize: '13px', 
-                  padding: '6px 8px', 
+              <div
+                key={s.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: 'var(--font-size-sm)',
+                  padding: '6px 8px',
                   borderRadius: '6px',
                   backgroundColor: 'rgba(44, 42, 41, 0.03)'
                 }}
@@ -446,13 +486,22 @@ function App() {
         <div className="sidebar-section" style={{ flex: 1, overflowY: 'auto' }}>
           <h2 className="section-title">Nodes ({activeNodes.length})</h2>
           {activeNodes.map(node => (
-            <div 
-              key={node.id} 
+            <div
+              key={node.id}
               className={`node-list-item ${selectedNodeId === node.id ? 'selected' : ''}`}
               onClick={() => setSelectedNodeId(node.id)}
             >
-              <span>{node.title}</span>
-              <span style={{ fontSize: '9px', opacity: 0.6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* Memory Health indicator dot */}
+                {(() => {
+                  const health = calculateNodeMemoryHealth(node.id);
+                  if (health === null) return <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'rgba(44, 42, 41, 0.2)' }} />;
+                  const color = health >= 0.9 ? '#2563EB' : health >= 0.7 ? '#EA580C' : '#EF4444';
+                  return <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: color }} />;
+                })()}
+                <span>{node.title}</span>
+              </div>
+              <span style={{ fontSize: 'var(--font-size-xxs)', opacity: 0.6 }}>
                 {new Date(node.created_at).toLocaleDateString("en-US", { day: 'numeric', month: 'short' })}
               </span>
             </div>
@@ -490,10 +539,10 @@ function App() {
 
           {/* Space Hover Popover Overlay */}
           {viewMode === 'timeline' && hoveredSpace && (
-            <div 
-              className="space-popover-tooltip" 
-              style={{ 
-                left: hoveredSpace.x, 
+            <div
+              className="space-popover-tooltip"
+              style={{
+                left: hoveredSpace.x,
                 top: hoveredSpace.y - 12,
                 transform: 'translate(-50%, -100%)'
               }}
@@ -517,7 +566,7 @@ function App() {
 
           {/* Node Hover Popover Overlay */}
           {viewMode === 'timeline' && hoveredNode && (
-            <div 
+            <div
               className="node-popover-tooltip"
               style={{
                 left: hoveredNode.x,
@@ -538,10 +587,10 @@ function App() {
                 {hoveredNode.memoryHealth !== null && (
                   <div className="node-popover-health">
                     <span className="health-label">Memory Stability:</span>
-                    <span 
-                      className="health-value" 
-                      style={{ 
-                        color: hoveredNode.memoryHealth >= 0.9 ? '#10B981' : hoveredNode.memoryHealth >= 0.7 ? '#EA580C' : '#EF4444' 
+                    <span
+                      className="health-value"
+                      style={{
+                        color: hoveredNode.memoryHealth >= 0.9 ? '#10B981' : hoveredNode.memoryHealth >= 0.7 ? '#EA580C' : '#EF4444'
                       }}
                     >
                       {Math.round(hoveredNode.memoryHealth * 100)}%
@@ -568,18 +617,18 @@ function App() {
                 <X size={16} />
               </button>
             </div>
-            
+
             <div className="popup-content">
-              {selectedNode.content || "No details provided."}
+              {renderHighlightedText(selectedNode.content) || "No details provided."}
             </div>
 
-            <div style={{ fontSize: '11px', color: '#6B6664' }}>
+            <div style={{ fontSize: 'var(--font-size-xs)', color: '#6B6664' }}>
               Created: {new Date(selectedNode.created_at).toLocaleString()}
             </div>
 
             <div className="popup-actions">
-              <button 
-                className="btn-primary" 
+              <button
+                className="btn-primary"
                 onClick={() => setShowCreateCard(true)}
                 style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
@@ -608,14 +657,14 @@ function App() {
       {/* 1. Create Node Modal */}
       {showCreateNode && (
         <div className="review-overlay">
-          <div className="review-container" style={{ width: '450px', height: 'auto', display: 'flex', flexDirection: 'column', padding: '30px', gap: '20px' }}>
+          <div className="modal-dialog">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontFamily: 'Outfit', fontSize: '20px', fontWeight: 700 }}>New Knowledge Node</h2>
+              <h2 style={{ fontFamily: 'Outfit', fontSize: 'var(--font-size-xl)', fontWeight: 700 }}>New Knowledge Node</h2>
               <button className="popup-close" onClick={() => setShowCreateNode(false)}><X size={20} /></button>
             </div>
             <form onSubmit={handleCreateNode} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Title</label>
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Title</label>
                 <input
                   type="text"
                   className="search-input"
@@ -626,9 +675,9 @@ function App() {
                   required
                 />
               </div>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Description</label>
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Description</label>
                 <textarea
                   className="search-input"
                   style={{ paddingLeft: '12px', minHeight: '80px', resize: 'vertical' }}
@@ -639,9 +688,9 @@ function App() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Space (Topic)</label>
-                <select 
-                  className="search-input" 
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Space (Topic)</label>
+                <select
+                  className="search-input"
                   style={{ paddingLeft: '12px' }}
                   value={newNodeSpaceId}
                   onChange={e => setNewNodeSpaceId(e.target.value)}
@@ -654,7 +703,7 @@ function App() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Creation Date (Timeline Anchor)</label>
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Creation Date (Timeline Anchor)</label>
                 <input
                   type="datetime-local"
                   className="search-input"
@@ -675,17 +724,17 @@ function App() {
       {/* 2. Create Relation Link (Edge) Modal */}
       {showCreateEdge && (
         <div className="review-overlay">
-          <div className="review-container" style={{ width: '450px', height: 'auto', display: 'flex', flexDirection: 'column', padding: '30px', gap: '20px' }}>
+          <div className="modal-dialog">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontFamily: 'Outfit', fontSize: '20px', fontWeight: 700 }}>New Network Connection</h2>
+              <h2 style={{ fontFamily: 'Outfit', fontSize: 'var(--font-size-xl)', fontWeight: 700 }}>New Network Connection</h2>
               <button className="popup-close" onClick={() => setShowCreateEdge(false)}><X size={20} /></button>
             </div>
             <form onSubmit={handleCreateEdge} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Source Node</label>
-                <select 
-                  className="search-input" 
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Source Node</label>
+                <select
+                  className="search-input"
                   style={{ paddingLeft: '12px' }}
                   value={newEdgeSourceId}
                   onChange={e => setNewEdgeSourceId(e.target.value)}
@@ -699,9 +748,9 @@ function App() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Target Node (Dependent)</label>
-                <select 
-                  className="search-input" 
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Target Node (Dependent)</label>
+                <select
+                  className="search-input"
                   style={{ paddingLeft: '12px' }}
                   value={newEdgeTargetId}
                   onChange={e => setNewEdgeTargetId(e.target.value)}
@@ -715,9 +764,9 @@ function App() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Relation Type</label>
-                <select 
-                  className="search-input" 
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Relation Type</label>
+                <select
+                  className="search-input"
                   style={{ paddingLeft: '12px' }}
                   value={newEdgeRelType}
                   onChange={e => setNewEdgeRelType(e.target.value)}
@@ -739,14 +788,14 @@ function App() {
       {/* 3. Create Flashcard Modal */}
       {showCreateCard && (
         <div className="review-overlay">
-          <div className="review-container" style={{ width: '450px', height: 'auto', display: 'flex', flexDirection: 'column', padding: '30px', gap: '20px' }}>
+          <div className="modal-dialog">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontFamily: 'Outfit', fontSize: '20px', fontWeight: 700 }}>Add Flashcard</h2>
+              <h2 style={{ fontFamily: 'Outfit', fontSize: 'var(--font-size-xl)', fontWeight: 700 }}>Add Flashcard</h2>
               <button className="popup-close" onClick={() => setShowCreateCard(false)}><X size={20} /></button>
             </div>
             <form onSubmit={handleCreateCard} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Question (Front)</label>
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Question (Front)</label>
                 <textarea
                   className="search-input"
                   style={{ paddingLeft: '12px', minHeight: '60px', resize: 'vertical' }}
@@ -758,7 +807,7 @@ function App() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Answer (Back)</label>
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Answer (Back)</label>
                 <textarea
                   className="search-input"
                   style={{ paddingLeft: '12px', minHeight: '60px', resize: 'vertical' }}
@@ -770,7 +819,7 @@ function App() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Synonyms (comma separated)</label>
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Synonyms (comma separated)</label>
                 <input
                   type="text"
                   className="search-input"
@@ -782,27 +831,27 @@ function App() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Image Reference File</label>
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Image Reference File</label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={e => setNewCardImageFile(e.target.files[0])}
-                  style={{ fontSize: '12px' }}
+                  style={{ fontSize: 'var(--font-size-sm-sub)' }}
                 />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Audio Reference File</label>
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Audio Reference File</label>
                 <input
                   type="file"
                   accept="audio/*"
                   onChange={e => setNewCardAudioFile(e.target.files[0])}
-                  style={{ fontSize: '12px' }}
+                  style={{ fontSize: 'var(--font-size-sm-sub)' }}
                 />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Scheduling Algorithm</label>
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 700, textTransform: 'uppercase', color: '#6B6664' }}>Scheduling Algorithm</label>
                 <select
                   className="search-input"
                   style={{ paddingLeft: '12px' }}

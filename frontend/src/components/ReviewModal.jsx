@@ -2,6 +2,30 @@ import React, { useState } from 'react';
 import { HelpCircle, Eye, Check } from 'lucide-react';
 import GraphView from './GraphView';
 
+const renderHighlightedText = (text) => {
+  if (!text) return null;
+  const parts = text.split(/==(.*?)==/g);
+  return parts.map((part, index) => {
+    if (index % 2 === 1) {
+      return (
+        <mark 
+          key={index} 
+          style={{ 
+            backgroundColor: 'var(--accent-lime)', 
+            color: 'var(--text-primary)', 
+            padding: '2px 4px', 
+            borderRadius: '4px',
+            fontWeight: 600
+          }}
+        >
+          {part}
+        </mark>
+      );
+    }
+    return part;
+  });
+};
+
 const ReviewModal = ({
   dueCards,
   subgraph,
@@ -14,10 +38,10 @@ const ReviewModal = ({
   if (!dueCards || dueCards.length === 0) {
     return (
       <div className="review-overlay">
-        <div className="review-container" style={{ width: '450px', height: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px', padding: '40px' }}>
+        <div className="modal-dialog modal-dialog-center" style={{ height: '300px' }}>
           <Check size={48} color="#10B981" />
-          <h2 style={{ fontFamily: 'Outfit', fontSize: '22px' }}>All caught up!</h2>
-          <p style={{ color: '#6B6664', textAlign: 'center', fontSize: '14px' }}>No flashcards due for review today.</p>
+          <h2 style={{ fontFamily: 'Outfit', fontSize: 'var(--font-size-xxl)' }}>All caught up!</h2>
+          <p style={{ color: '#6B6664', textAlign: 'center', fontSize: 'var(--font-size-sm)' }}>No flashcards due for review today.</p>
           <button className="btn-primary" onClick={onClose} style={{ flex: 'none', padding: '10px 24px' }}>
             Back to Timeline
           </button>
@@ -69,17 +93,17 @@ const ReviewModal = ({
               <span>Contextual Memory Review</span>
             </div>
             
-            <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#6B6664', fontWeight: 600, textTransform: 'uppercase', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', gap: '8px', fontSize: 'var(--font-size-xs)', color: '#6B6664', fontWeight: 600, textTransform: 'uppercase', marginBottom: '20px' }}>
               <span>Progress:</span>
               <span style={{ color: '#2C2A29' }}>{currentIndex + 1} / {dueCards.length} Cards</span>
             </div>
           </div>
 
-          <div className="flashcard-content">
+          <div className="flashcard-content" key={currentIndex}>
             <div className="flashcard-side" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div>{currentCard.front}</div>
+              <div>{renderHighlightedText(currentCard.front)}</div>
               {currentCard.synonyms && (
-                <div className="flashcard-synonyms-hint" style={{ fontSize: '12px', color: '#6B6664', borderTop: '1px dashed rgba(44,42,41,0.1)', paddingTop: '6px', marginTop: '4px' }}>
+                <div className="flashcard-synonyms-hint" style={{ fontSize: 'var(--font-size-sm-sub)', color: '#6B6664', borderTop: '1px dashed rgba(44,42,41,0.1)', paddingTop: '6px', marginTop: '4px' }}>
                   <span style={{ fontWeight: 600 }}>Synonym:</span> {currentCard.synonyms}
                 </div>
               )}
@@ -87,7 +111,7 @@ const ReviewModal = ({
 
             {showAnswer ? (
               <div className="flashcard-side flashcard-answer" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div>{currentCard.back}</div>
+                <div>{renderHighlightedText(currentCard.back)}</div>
                 {currentCard.image_url && (
                   <div className="flashcard-image-wrapper" style={{ marginTop: '8px', maxWidth: '100%', maxHeight: '180px', overflow: 'hidden', borderRadius: '8px' }}>
                     <img 
@@ -153,10 +177,10 @@ const ReviewModal = ({
         {/* Knowledge Graph Neighbor Pane */}
         <div className="review-graph-pane">
           <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 10 }}>
-            <span style={{ fontSize: '10px', textTransform: 'uppercase', color: '#6B6664', fontWeight: 700 }}>
+            <span style={{ fontSize: 'var(--font-size-xxs)', textTransform: 'uppercase', color: '#6B6664', fontWeight: 700 }}>
               Neighbor Context Mesh
             </span>
-            <h4 style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '15px' }}>
+            <h4 style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 'var(--font-size-base)' }}>
               {currentCard.node_title}
             </h4>
           </div>
